@@ -11,18 +11,35 @@
 
     #cargo ship and related save cleanup.
     Write-Host -ForegroundColor Green "Cargo Ship Cleaning ....  "
-    [string]$compare = "360"
-    $NPCPlayerID = $myXML2.SelectNodes("//Identities/MyObjectBuilder_Identity/PlayerId" , $ns2)
+    [string]$compare = "Neutral NPC"
+    $NPCPlayerID = $myXML2.SelectNodes("//Identities/MyObjectBuilder_Identity/DisplayName" , $ns2)
+    $allgrids = $myXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase[(@xsi:type='MyObjectBuilder_CubeGrid')]", $ns)
     ForEach($ID in $NPCPlayerID){
-        $NPCID = [string]$ID.InnerText[0] + [string]$ID.InnerText[1] + [string]$ID.InnerText[2]
+        $NPCID = [string]$ID.InnerText
         If($NPCID -eq $compare){
-            Write-Host -ForegroundColor Green " NPC ID and owned blocks deleteing ... "
-            $NPCnodeOwns = $myXML.SelectNodes("//CubeBlocks/MyObjectBuilder_CubeBlock[Owner='$($ID.InnerText)']"  , $ns)
+        ForEach($grid in $allgrids){
+            $npcbeacon=$grid.SelectSingleNode("CubeBlocks/MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_Beacon')]", $ns)
+            If($npcbeacon.Owner -eq $ID.ParentNode.IdentityId){
+            Write-Host -ForegroundColor Green " NPC ID and owned blocks deleting ... "
+            $NPCnodeOwns = $myXML.SelectNodes("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[Owner='$($ID.ParentNode.IdentityId)']"  , $ns)
+            $cargodoors=$grid.SelectNodes("CubeBlocks/MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_MotorStator')]",$ns)
+            #$cargodoors=$cargodoors.SelectNodes("MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_MotorStator')]", $ns)
+            ForEach($cargorotor in $cargodoors){
+            $doorID=$cargorotor.RotorEntityId
+            IF($doorID -ne 0 -and $doorID -ne $null){
+            Write-Host -ForegroundColor Green " NPC Cargo door deleted "
+            $targetdoor = $myXML.SelectSingleNode("//SectorObjects/MyObjectBuilder_EntityBase/CubeBlocks/MyObjectBuilder_CubeBlock[(@xsi:type='MyObjectBuilder_MotorRotor') and EntityId='$doorID']",$ns)
+            $targetdoor.ParentNode.ParentNode.ParentNode.RemoveChild($targetdoor.ParentNode.ParentNode)
+            }
+            }
             ForEach($NPCOwned in $NPCnodeOwns){
             Write-Host -ForegroundColor Green " $($NPCOwned.SubtypeName) deleted!"
             $NPCOwned.ParentNode.RemoveChild($NPCOwned)
             }
-            $ID.ParentNode.ParentNode.RemoveChild($ID.ParentNode)
+            #$ID.ParentNode.ParentNode.RemoveChild($ID.ParentNode)
+            }
+        }
+        $ID.ParentNode.ParentNode.RemoveChild($ID.ParentNode)
         }
     }
 
