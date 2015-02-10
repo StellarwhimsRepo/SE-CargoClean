@@ -43,5 +43,21 @@
         }
     }
 
+    #enable the below code by removing the <# and #> at the top and bottom of this section
+    #this section resets exploration spawn areas.
+
+    <#
+    Write-Host -ForegroundColor Green "Resetting Exploration Encounters ....  "
+    $movedencounters = $myXML.MyObjectBuilder_Sector.Encounters.MovedOnlyEncounters.dictionary.item
+    $savedencounters = $myXML.MyObjectBuilder_Sector.Encounters.SavedEcounters.MyEncounterId
+    ForEach($Encounter in $allencounters){
+    $Encounter.ParentNode.RemoveChild($Encounter)
+    }
+    ForEach($MEncounter in $movedencounters){
+    $MEncounter.ParentNode.RemoveChild($MEncounter)
+    }
+    Write-Host -ForegroundColor Green "Exploration Encounters Reset!!  "
+    #>
+
     $myXML.Save($filePath)
     $myXML2.Save($filePath2)
